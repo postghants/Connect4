@@ -4,6 +4,7 @@ public class Tile
 {
     public enum TileState { EMPTY, P1, P2 };
     public TileState State = TileState.EMPTY;
+    public bool IsEmpty => State == TileState.EMPTY;
 
     public void FlipTile()
     {
