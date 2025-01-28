@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,9 +13,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int connectHowMany;
     [SerializeField] private int clusterSize;
 
+    public Tile.TileState currentTurn = Tile.TileState.P1;
+
     private Tile[,] tiles;
-    private Tile.TileState currentTurn = Tile.TileState.P1;
-    private List<TileCluster> clusters = new();
+    [SerializeField]private List<TileCluster> clusters = new();
 
     private void Awake()
     {
@@ -30,7 +32,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void DropPiece(int column, Image image)
+    public void DropPiece(int column)
     {
         Debug.Log("Dropping piece");
         for (int i = 0; i < gridSize.y; i++)
@@ -39,9 +41,8 @@ public class GameManager : MonoBehaviour
             if (tile.IsEmpty)
             {
                 Debug.Log("Dropped piece at " + column + i);
-                if (currentTurn == Tile.TileState.P1) { image.color = Color.red; }
-                else { image.color = Color.yellow; }
                 tile.State = currentTurn;
+                PieceManager.Instance.SpawnNewPiece(new(column, i), currentTurn);
                 EndTurn();
                 return;
             }
@@ -53,21 +54,68 @@ public class GameManager : MonoBehaviour
         Tile tile = tiles[target.x, target.y];
         if (tile == null || tile.IsEmpty) { return; }
         tile.FlipTile();
+        PieceManager.Instance.FlipPiece(target);
+        PlayerUIManager.Instance.GetFlipTokenUI(currentTurn).RemoveToken();
         EndTurn();
+    }
+
+    private void RemoveTiles(Tile[] tilesToRemove)
+    {
+        foreach (Tile tile in tilesToRemove)
+        {
+            tiles[tile.x, tile.y].State = Tile.TileState.EMPTY;
+            PieceManager.Instance.RemovePiece(new(tile.x, tile.y));
+        }
+
+        for (int i = 0; i < gridSize.x; i++)
+        {
+            for (int j = 0; j < gridSize.y; j++)
+            {
+                if (tiles[i, j].IsEmpty)
+                {
+                    for (int k = j + 1; k < gridSize.y; k++)
+                    {
+                        if (tiles[i, k].IsEmpty) { continue; }
+
+                        tiles[i, j].State = tiles[i, k].State;
+                        tiles[i, k].State = Tile.TileState.EMPTY;
+                        PieceManager.Instance.SetPieceDestination(new(i, k), new(i, j));
+                        break;
+                    }
+                }
+                if (tiles[i, j].IsEmpty) { break; }
+            }
+        }
     }
 
     private void EndTurn()
     {
-        CheckForWin();
-        CheckForFullRow();
-        CheckForClusters();
+        bool checking = true;
+        while (checking)
+        {
+            checking = false;
+            CheckForWin();
+            var tilesToRemove = CheckForFullRow().ToList();
+            tilesToRemove.AddRange(CheckForClusters());
+            if (tilesToRemove.Count > 0)
+            {
+                RemoveTiles(tilesToRemove.ToArray());
+                checking = true;
+            }
+        }
 
         switch (currentTurn)
         {
             case Tile.TileState.P1: currentTurn = Tile.TileState.P2; break;
             case Tile.TileState.P2: currentTurn = Tile.TileState.P1; break;
         }
+        PlayerUIManager.Instance.SetTurn(currentTurn);
 
+    }
+
+    private void AddFlipToken()
+    {
+        PlayerUIManager.Instance.AddFlipToken(currentTurn);
     }
 
     private void CheckForWin()
@@ -165,14 +213,15 @@ public class GameManager : MonoBehaviour
                 if (tiles[i, j].IsEmpty) { break; }
                 if (i == gridSize.x - 1)
                 {
-                    for(int k = 0;  k < gridSize.x; k++)
+                    for (int k = 0; k < gridSize.x; k++)
                     {
+                        AddFlipToken();
                         tilesInFullRows.Add(tiles[k, j]);
                     }
                 }
             }
         }
-        return (Tile[])tilesInFullRows.Distinct();
+        return tilesInFullRows.Distinct().ToArray();
 
     }
 
@@ -233,12 +282,13 @@ public class GameManager : MonoBehaviour
 
         foreach (TileCluster cluster in clusters)
         {
-            if (cluster.TileList.Count > clusterSize)
+            if (cluster.TileList.Count >= clusterSize)
             {
+                AddFlipToken();
                 tilesInClusters.AddRange(cluster.TileList);
             }
         }
-        return (Tile[])tilesInClusters.Distinct();
+        return tilesInClusters.Distinct().ToArray();
     }
 
     public Vector2Int[] GetNeighbours(int x, int y)
@@ -249,7 +299,6 @@ public class GameManager : MonoBehaviour
         if (y - 1 >= 0) { neighbours.Add(new(x, y - 1)); }
         if (y + 1 < gridSize.y) { neighbours.Add(new(x, y + 1)); }
         return neighbours.ToArray();
-
     }
 
     private void WinForPlayer(int player)

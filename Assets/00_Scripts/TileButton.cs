@@ -13,7 +13,15 @@ public class TileButton : MonoBehaviour, IPointerUpHandler, IPointerDownHandler
     public void OnPointerUp(PointerEventData eventData)
     {
         Debug.Log("Mouse Up");
-        GameManager.Instance.DropPiece(column, GetComponent<Image>());
+        Tile.TileState currentTurn = GameManager.Instance.currentTurn;
+        if (PlayerUIManager.Instance.GetFlipTokenUI(currentTurn).toggle)
+        {
+            GameManager.Instance.FlipTile(new(column, row));
+        }
+        else
+        {
+            GameManager.Instance.DropPiece(column);
+        }
     }
     public void OnPointerDown(PointerEventData eventData) { }
 }
