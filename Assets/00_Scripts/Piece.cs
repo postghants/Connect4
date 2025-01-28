@@ -7,6 +7,7 @@ public class Piece : MonoBehaviour
 {
     [SerializeField] private float acceleration;
     [SerializeField] private Image image;
+    [SerializeField] private Image winMark;
     private float speed;
 
     private Vector2 destination;
@@ -52,5 +53,10 @@ public class Piece : MonoBehaviour
             state = Tile.TileState.P1;
             image.color = Color.red; 
         }
+    }
+
+    public void EnableWinMark()
+    {
+        winMark.enabled = true;
     }
 }

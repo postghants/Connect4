@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,6 +14,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Vector2Int gridSize;
     [SerializeField] private int connectHowMany;
     [SerializeField] private int clusterSize;
+
+    [Header("References")]
+    [SerializeField] private GameObject endTextObj;
+    [SerializeField] private TMP_Text endText;
 
     [Header("Timing")]
     [SerializeField] private float turnActionTime;
@@ -81,7 +86,7 @@ public class GameManager : MonoBehaviour
         while (checking)
         {
             checking = false;
-            CheckForWin();
+            if(CheckForWin()) { yield break; }
             var tilesToRemove = CheckForFullRow().ToList();
             tilesToRemove.AddRange(CheckForClusters());
             if (tilesToRemove.Count > 0)
@@ -141,8 +146,11 @@ public class GameManager : MonoBehaviour
         PlayerUIManager.Instance.AddFlipToken(currentTurn);
     }
 
-    private void CheckForWin()
+    private bool CheckForWin()
     {
+        List<Tile> winTiles = new();
+        List<Tile.TileState> winStates = new();
+
         // Horizontal
         for (int j = 0; j < gridSize.y; j++)
         {
@@ -158,7 +166,11 @@ public class GameManager : MonoBehaviour
                     }
                     if (k == connectHowMany - 1)
                     {
-                        WinForPlayer((int)tiles[i, j].State);
+                        winStates.Add(tiles[i, j].State);
+                        for(int l = 0; l < connectHowMany; l++)
+                        {
+                            winTiles.Add(tiles[i+l, j]);
+                        }
                     }
                 }
             }
@@ -179,7 +191,11 @@ public class GameManager : MonoBehaviour
                     }
                     if (k == connectHowMany - 1)
                     {
-                        WinForPlayer((int)tiles[i, j].State);
+                        winStates.Add(tiles[i, j].State);
+                        for (int l = 0; l < connectHowMany; l++)
+                        {
+                            winTiles.Add(tiles[i, j + l]);
+                        }
                     }
                 }
             }
@@ -199,7 +215,11 @@ public class GameManager : MonoBehaviour
                     }
                     if (k == connectHowMany - 1)
                     {
-                        WinForPlayer((int)tiles[i, j].State);
+                        winStates.Add(tiles[i, j].State);
+                        for (int l = 0; l < connectHowMany; l++)
+                        {
+                            winTiles.Add(tiles[i + l, j + l]);
+                        }
                     }
                 }
             }
@@ -219,11 +239,34 @@ public class GameManager : MonoBehaviour
                     }
                     if (k == connectHowMany - 1)
                     {
-                        WinForPlayer((int)tiles[i, j].State);
+                        winStates.Add(tiles[i, j].State);
+                        for (int l = 0; l < connectHowMany; l++)
+                        {
+                            winTiles.Add(tiles[i + l, j - l]);
+                        }
                     }
                 }
             }
         }
+
+        if(winStates.Count > 0)
+        {
+            foreach(Tile tile in winTiles)
+            {
+                PieceManager.Instance.EnableWinMark(new(tile.x, tile.y));
+            }
+            winStates = winStates.Distinct().ToList();
+            if(winStates.Count > 1)
+            {
+                WinForPlayer(0);
+                return true;
+            }
+            WinForPlayer((int)winStates[0]);
+            return true;
+        }
+
+        return false;
+
     }
 
     private Tile[] CheckForFullRow()
@@ -326,6 +369,14 @@ public class GameManager : MonoBehaviour
 
     private void WinForPlayer(int player)
     {
-        Debug.Log($"Player {player} won!");
+        endTextObj.SetActive(true);
+        if(player == 0)
+        {
+            endText.text = "Draw!";
+        }
+        else
+        {
+            endText.text = $"P{player} wins!";
+        }
     }
 }

@@ -54,4 +54,12 @@ public class PieceManager : MonoBehaviour
             Destroy(obj);
         }
     }
+
+    public void EnableWinMark(Vector2Int position)
+    {
+        if (pieceList.ContainsKey(position))
+        {
+            ((Piece)pieceList[position]).EnableWinMark();
+        }
+    }
 }
