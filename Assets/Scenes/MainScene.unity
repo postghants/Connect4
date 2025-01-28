@@ -861,7 +861,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &272511804
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2656,8 +2656,11 @@ MonoBehaviour:
   gridSize: {x: 7, y: 6}
   connectHowMany: 5
   clusterSize: 6
-  currentTurn: 1
+  turnActionTime: 0.3
+  removeTilesPauseTime: 1
+  updateTilesTime: 0.3
   clusters: []
+  currentTurn: 1
 --- !u!4 &899586905
 Transform:
   m_ObjectHideFlags: 0
@@ -5309,7 +5312,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1889688772
 RectTransform:
   m_ObjectHideFlags: 0
