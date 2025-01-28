@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
@@ -8,8 +10,11 @@ public class GameManager : MonoBehaviour
 
     [SerializeField] private Vector2Int gridSize;
     [SerializeField] private int connectHowMany;
+    [SerializeField] private int clusterSize;
 
     private Tile[,] tiles;
+    private Tile.TileState currentTurn = Tile.TileState.P1;
+    private List<TileCluster> clusters = new();
 
     private void Awake()
     {
@@ -20,12 +25,12 @@ public class GameManager : MonoBehaviour
         {
             for (int i = 0; i < gridSize.x; i++)
             {
-                tiles[i, j] = new();
+                tiles[i, j] = new(i, j);
             }
         }
     }
 
-    public void DropPiece(int column, Tile.TileState newState)
+    public void DropPiece(int column, Image image)
     {
         Debug.Log("Dropping piece");
         for (int i = 0; i < gridSize.y; i++)
@@ -33,8 +38,10 @@ public class GameManager : MonoBehaviour
             Tile tile = tiles[column, i];
             if (tile.IsEmpty)
             {
-                Debug.Log("Dropped piece at " + i + column);
-                tile.State = newState;
+                Debug.Log("Dropped piece at " + column + i);
+                if (currentTurn == Tile.TileState.P1) { image.color = Color.red; }
+                else { image.color = Color.yellow; }
+                tile.State = currentTurn;
                 EndTurn();
                 return;
             }
@@ -51,9 +58,16 @@ public class GameManager : MonoBehaviour
 
     private void EndTurn()
     {
-
         CheckForWin();
-        CheckForFullLine();
+        CheckForFullRow();
+        CheckForClusters();
+
+        switch (currentTurn)
+        {
+            case Tile.TileState.P1: currentTurn = Tile.TileState.P2; break;
+            case Tile.TileState.P2: currentTurn = Tile.TileState.P1; break;
+        }
+
     }
 
     private void CheckForWin()
@@ -123,7 +137,7 @@ public class GameManager : MonoBehaviour
         // Descending Diagonal
         for (int i = 0; i < gridSize.x - connectHowMany + 1; i++)
         {
-            for (int j = gridSize.y - 1; j >= connectHowMany; j--)
+            for (int j = gridSize.y - 1; j >= connectHowMany - 1; j--)
             {
                 if (tiles[i, j].IsEmpty) { continue; }
                 for (int k = 1; k < connectHowMany; k++)
@@ -141,17 +155,101 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private bool CheckForFullLine()
+    private Tile[] CheckForFullRow()
     {
+        List<Tile> tilesInFullRows = new();
         for (int j = 0; j < gridSize.y; j++)
         {
             for (int i = 0; i < gridSize.x; i++)
             {
                 if (tiles[i, j].IsEmpty) { break; }
-                if (i == gridSize.x - 1) { return true; }
+                if (i == gridSize.x - 1)
+                {
+                    for(int k = 0;  k < gridSize.x; k++)
+                    {
+                        tilesInFullRows.Add(tiles[k, j]);
+                    }
+                }
             }
         }
-        return false;
+        return (Tile[])tilesInFullRows.Distinct();
+
+    }
+
+    private Tile[] CheckForClusters()
+    {
+        clusters.Clear();
+        // Connected-component
+        bool[,] processed = new bool[gridSize.x, gridSize.y];
+        List<Tile> queue1 = new();
+        List<Tile> queue2 = new();
+        Tile.TileState currentClusterState;
+
+        for (int i = 0; i < gridSize.x; i++)
+        {
+            for (int j = 0; j < gridSize.y; j++)
+            {
+                if (processed[i, j]) { continue; }
+                if (tiles[i, j].IsEmpty)
+                {
+                    processed[i, j] = true;
+                    continue;
+                }
+                currentClusterState = tiles[i, j].State;
+                clusters.Add(new TileCluster(currentClusterState));
+                clusters[^1].TileList.Add(tiles[i, j]);
+                processed[i, j] = true;
+                queue1.Add(tiles[i, j]);
+
+                while (queue1.Count > 0)
+                {
+                    foreach (Tile tile in queue1)
+                    {
+                        foreach (Vector2Int n in GetNeighbours(tile.x, tile.y))
+                        {
+                            if (processed[n.x, n.y]) { continue; }
+                            if (tiles[n.x, n.y].IsEmpty)
+                            {
+                                processed[n.x, n.y] = true;
+                                continue;
+                            }
+                            if (tiles[n.x, n.y].State == currentClusterState)
+                            {
+                                clusters[^1].TileList.Add(tiles[n.x, n.y]);
+                                processed[n.x, n.y] = true;
+                                queue2.Add(tiles[n.x, n.y]);
+                            }
+                        }
+                    }
+                    queue1.Clear();
+                    queue1.AddRange(queue2);
+                    queue2.Clear();
+                }
+
+            }
+        }
+
+        List<Tile> tilesInClusters = new();
+
+        foreach (TileCluster cluster in clusters)
+        {
+            if (cluster.TileList.Count > clusterSize)
+            {
+                tilesInClusters.AddRange(cluster.TileList);
+            }
+        }
+        return (Tile[])tilesInClusters.Distinct();
+    }
+
+    public Vector2Int[] GetNeighbours(int x, int y)
+    {
+        List<Vector2Int> neighbours = new();
+        if (x - 1 >= 0) { neighbours.Add(new(x - 1, y)); }
+        if (x + 1 < gridSize.x) { neighbours.Add(new(x + 1, y)); }
+        if (y - 1 >= 0) { neighbours.Add(new(x, y - 1)); }
+        if (y + 1 < gridSize.y) { neighbours.Add(new(x, y + 1)); }
+        return neighbours.ToArray();
+
     }
 
     private void WinForPlayer(int player)
