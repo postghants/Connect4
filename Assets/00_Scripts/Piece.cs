@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -51,7 +49,7 @@ public class Piece : MonoBehaviour
         else
         {
             state = Tile.TileState.P1;
-            image.color = Color.red; 
+            image.color = Color.red;
         }
     }
 

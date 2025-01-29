@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -25,7 +23,7 @@ public class FlipTokenUI : MonoBehaviour, IPointerDownHandler
     {
         tokenCount--;
         countText.text = tokenCount.ToString();
-        if(tokenCount == 0 && toggle)
+        if (tokenCount == 0 && toggle)
         {
             toggle = false;
             activeBackdrop.enabled = false;
@@ -34,7 +32,7 @@ public class FlipTokenUI : MonoBehaviour, IPointerDownHandler
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        if(tokenCount == 0 || GameManager.Instance.currentTurn != player) { return; }
+        if (tokenCount == 0 || GameManager.Instance.currentTurn != player) { return; }
         toggle = !toggle;
         activeBackdrop.enabled = toggle;
 

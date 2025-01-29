@@ -1,7 +1,7 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
+// Handles visual pieces
 public class PieceManager : MonoBehaviour
 {
     public static PieceManager Instance;

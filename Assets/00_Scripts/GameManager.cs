@@ -2,10 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.UI;
 
+// Handles game state & logic
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
@@ -86,7 +85,7 @@ public class GameManager : MonoBehaviour
         while (checking)
         {
             checking = false;
-            if(CheckForWin()) { yield break; }
+            if (CheckForWin()) { yield break; }
             var tilesToRemove = CheckForFullRow().ToList();
             tilesToRemove.AddRange(CheckForClusters());
             if (tilesToRemove.Count > 0)
@@ -167,9 +166,9 @@ public class GameManager : MonoBehaviour
                     if (k == connectHowMany - 1)
                     {
                         winStates.Add(tiles[i, j].State);
-                        for(int l = 0; l < connectHowMany; l++)
+                        for (int l = 0; l < connectHowMany; l++)
                         {
-                            winTiles.Add(tiles[i+l, j]);
+                            winTiles.Add(tiles[i + l, j]);
                         }
                     }
                 }
@@ -249,14 +248,14 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        if(winStates.Count > 0)
+        if (winStates.Count > 0)
         {
-            foreach(Tile tile in winTiles)
+            foreach (Tile tile in winTiles)
             {
                 PieceManager.Instance.EnableWinMark(new(tile.x, tile.y));
             }
             winStates = winStates.Distinct().ToList();
-            if(winStates.Count > 1)
+            if (winStates.Count > 1)
             {
                 WinForPlayer(0);
                 return true;
@@ -370,7 +369,7 @@ public class GameManager : MonoBehaviour
     private void WinForPlayer(int player)
     {
         endTextObj.SetActive(true);
-        if(player == 0)
+        if (player == 0)
         {
             endText.text = "Draw!";
         }

@@ -1,14 +1,12 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Handles UI for player turns and flip tokens
 public class PlayerUIManager : MonoBehaviour
 {
     public static PlayerUIManager Instance;
     [SerializeField] private List<PlayerTurnUI> turnUI = new();
     [SerializeField] private List<FlipTokenUI> flipTokenUI = new();
-
-    private Tile.TileState currentTurn;
 
     private void Awake()
     {
@@ -17,7 +15,6 @@ public class PlayerUIManager : MonoBehaviour
 
     public void SetTurn(Tile.TileState newTurn)
     {
-        currentTurn = newTurn;
         foreach (var ui in turnUI)
         {
             ui.SetTurn(newTurn);
@@ -32,7 +29,7 @@ public class PlayerUIManager : MonoBehaviour
     public FlipTokenUI GetFlipTokenUI(Tile.TileState targetPlayer)
     {
         if (targetPlayer == Tile.TileState.EMPTY) { return null; }
-        
+
         return flipTokenUI[(int)targetPlayer - 1];
     }
 }
